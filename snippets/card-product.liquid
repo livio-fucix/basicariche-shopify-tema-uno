@@ -141,6 +141,11 @@
               </span>
             {%- endif -%}
           </div>
+          {%- if card_product.tags contains 'novita' or card_product.tags contains 'novità' or card_product.tags contains 'new' or card_product.tags contains 'New' -%}
+            <span class="card__novelty-ribbon" aria-hidden="true">
+              <span class="card__novelty-ribbon-text">NOVITÀ</span>
+            </span>
+          {%- endif -%}
         </div>
       </div>
       <div class="card__content">
@@ -289,7 +294,117 @@
           </div>
         </div>
         {% assign product_form_id = 'quick-add-' | append: section_id | append: card_product.id %}
-        {% if quick_add == 'standard' %}
+        {% if quick_add == 'inline' %}
+          {%- liquid
+            assign current_variant = card_product.selected_or_first_available_variant
+          -%}
+          <card-quick-add-inline
+            class="card-quick-add-inline no-js-hidden"
+            data-section-id="{{ section_id }}"
+            data-product-id="{{ card_product.id }}"
+          >
+            <script type="application/json" data-card-variants>
+              {{ card_product.variants | json }}
+            </script>
+            <product-form data-section-id="{{ section_id }}">
+              {%- form 'product',
+                card_product,
+                id: product_form_id,
+                class: 'form card-quick-add-inline__form',
+                novalidate: 'novalidate',
+                data-type: 'add-to-cart-form'
+              -%}
+                <input
+                  type="hidden"
+                  name="id"
+                  value="{{ current_variant.id }}"
+                  class="product-variant-id"
+                  data-card-variant-id-input
+                  {% if current_variant.available == false %}
+                    disabled
+                  {% endif %}
+                >
+
+                {%- if card_product.has_only_default_variant == false -%}
+                  <div class="card-quick-add-inline__options">
+                    {%- for option in card_product.options_with_values -%}
+                      {%- liquid
+                        assign option_name_downcased = option.name | downcase
+                        assign is_color = false
+                        if option_name_downcased contains 'color' or option_name_downcased contains 'colore'
+                          assign is_color = true
+                        endif
+                        assign group_id = 'CardOpt-' | append: section_id | append: '-' | append: card_product.id | append: '-' | append: forloop.index0
+                      -%}
+                      <fieldset
+                        class="card-quick-add-inline__option{% if is_color %} card-quick-add-inline__option--color{% endif %}"
+                        data-option-position="{{ forloop.index0 }}"
+                      >
+                        <legend class="card-quick-add-inline__option-label">{{ option.name }}</legend>
+                        <div class="card-quick-add-inline__pills">
+                          {%- for value in option.values -%}
+                            {%- assign input_id = group_id | append: '-' | append: forloop.index0 -%}
+                            <input
+                              type="radio"
+                              id="{{ input_id }}"
+                              name="{{ group_id }}"
+                              value="{{ value | escape }}"
+                              data-card-option
+                              {% if value == option.selected_value %}checked{% endif %}
+                            >
+                            <label
+                              for="{{ input_id }}"
+                              class="card-quick-add-inline__pill{% if is_color %} card-quick-add-inline__swatch{% endif %}"
+                              {%- if is_color %} style="--swatch-bg: {{ value | downcase | handle }};" data-swatch-name="{{ value | downcase | escape }}"{% endif -%}
+                            >
+                              {%- if is_color -%}
+                                <span class="visually-hidden">{{ value }}</span>
+                              {%- else -%}
+                                {{ value }}
+                              {%- endif -%}
+                            </label>
+                          {%- endfor -%}
+                        </div>
+                      </fieldset>
+                    {%- endfor -%}
+                  </div>
+                {%- endif -%}
+
+                <div class="card-quick-add-inline__bar">
+                  <span class="card-quick-add-inline__price" data-card-price>
+                    {%- if current_variant.compare_at_price > current_variant.price -%}
+                      <s class="card-quick-add-inline__price-compare">{{ current_variant.compare_at_price | money }}</s>
+                    {%- endif -%}
+                    <span data-card-price-current>{{ current_variant.price | money }}</span>
+                  </span>
+                  <button
+                    id="{{ product_form_id }}-submit"
+                    type="submit"
+                    name="add"
+                    class="card-quick-add-inline__submit"
+                    aria-labelledby="{{ product_form_id }}-submit title-{{ section_id }}-{{ card_product.id }}"
+                    aria-live="polite"
+                    data-card-submit
+                    data-sold-out-message="true"
+                    {% if current_variant.available == false %}disabled{% endif %}
+                  >
+                    <span class="visually-hidden" data-card-submit-label>
+                      {%- if current_variant.available -%}
+                        {{ 'products.product.add_to_cart' | t }}
+                      {%- else -%}
+                        {{ 'products.product.sold_out' | t }}
+                      {%- endif -%}
+                    </span>
+                    <span class="card-quick-add-inline__icon" aria-hidden="true">
+                      {{- 'icon-cart-empty.svg' | inline_asset_content -}}
+                    </span>
+                    {%- render 'loading-spinner' -%}
+                  </button>
+                </div>
+              {%- endform -%}
+            </product-form>
+          </card-quick-add-inline>
+        {% elsif quick_add == 'standard' %}
           <div class="quick-add no-js-hidden">
             {%- liquid
               assign qty_rules = false

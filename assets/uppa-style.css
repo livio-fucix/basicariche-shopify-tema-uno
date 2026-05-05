@@ -1,0 +1,71 @@
+/* Uppa-inspired global tweaks: pill nav, rounded announcement, accent orange */
+
+:root {
+  --uppa-accent: 242, 106, 31; /* #F26A1F */
+  --uppa-pill-border: 30, 42, 120; /* #1E2A78 navy */
+}
+
+/* Header menu items rendered as rounded pill buttons */
+.header__menu-item {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.6rem 1.6rem !important;
+  border: 1px solid rgb(var(--uppa-pill-border));
+  border-radius: 999px;
+  color: rgb(var(--uppa-pill-border));
+  background-color: transparent;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.header__menu-item:hover {
+  background-color: rgb(var(--uppa-pill-border));
+  color: rgb(var(--color-background));
+  text-decoration: none;
+}
+
+.header__menu-item span,
+.header__menu-item:hover span {
+  text-decoration: none !important;
+}
+
+.header__menu-item[aria-current='page'],
+.header__menu-item:has(.header__active-menu-item) {
+  background-color: rgb(var(--uppa-accent));
+  border-color: rgb(var(--uppa-accent));
+  color: #fff;
+}
+
+.header__active-menu-item {
+  text-underline-offset: 0;
+  text-decoration: none !important;
+}
+
+/* Spacing between pill items */
+.header__inline-menu .list-menu--inline {
+  gap: 0.6rem;
+}
+
+/* Make the cart icon bubble feel uppa-like (orange) */
+.cart-count-bubble {
+  background-color: rgb(var(--uppa-accent)) !important;
+  color: #fff !important;
+}
+
+/* Announcement bar: soft pink background with orange link, rounded ends */
+.announcement-bar {
+  background-color: #fbe6db;
+  color: rgb(var(--uppa-accent));
+}
+
+.announcement-bar__message,
+.announcement-bar__link {
+  color: rgb(var(--uppa-accent));
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Slightly bolder titles to match the uppa look */
+.product-card-wrapper .card__heading,
+.card-information .card__heading {
+  font-weight: 700;
+}
