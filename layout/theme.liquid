@@ -68,10 +68,15 @@
 
     <script>document.documentElement.classList.replace('bc-no-js','bc-js');</script>
 
+    {%- comment -%}
+      Order matters: theme.js initializes window.bcEvents (the pub/sub bus).
+      cart-drawer.js + product-form.js must run AFTER, so their listeners
+      hook into the real event bus rather than a stub.
+    {%- endcomment -%}
+    <script src="{{ 'theme.js' | asset_url }}" defer></script>
     {%- if settings.cart_type == 'drawer' -%}
       <script src="{{ 'cart-drawer.js' | asset_url }}" defer></script>
     {%- endif -%}
-    <script src="{{ 'theme.js' | asset_url }}" defer></script>
     <script src="{{ 'product-form.js' | asset_url }}" defer></script>
 
     {{ content_for_header }}
@@ -89,7 +94,7 @@
     {% sections 'footer-group' %}
 
     {%- if settings.cart_type == 'drawer' -%}
-      {% render 'cart-drawer' %}
+      {% section 'cart-drawer' %}
     {%- endif -%}
 
     <ul hidden>

@@ -172,7 +172,7 @@ a { color: inherit; }
 
 .bc-button:active:not([disabled]) { transform: scale(0.98); }
 
-.bc-button[disabled] { opacity: 0.55; cursor: not-allowed; }
+.bc-button[disabled]:not(.is-loading) { opacity: 0.55; cursor: not-allowed; }
 
 .bc-button--primary {
   background-color: var(--bc-accent);
@@ -737,7 +737,7 @@ a { color: inherit; }
   color: var(--bc-text);
   border: 0;
   cursor: pointer;
-  transition: background-color var(--bc-transition), color var(--bc-transition);
+  transition: background-color var(--bc-transition), color var(--bc-transition), transform 80ms ease;
 }
 
 .bc-card__cta:hover:not([disabled]) {
@@ -745,21 +745,38 @@ a { color: inherit; }
   color: var(--bc-accent-text);
 }
 
-.bc-card__cta[disabled] {
+/* Press feedback (immediate visual on tap) */
+.bc-card__cta:active:not([disabled]),
+.bc-card__cta.is-loading {
+  background-color: var(--bc-accent);
+  color: var(--bc-accent-text);
+  transform: scale(0.95);
+}
+
+.bc-card__cta[disabled]:not(.is-loading) {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.bc-card__cta .bc-icon { width: 2rem; height: 2rem; }
+.bc-card__cta.is-loading {
+  cursor: wait;
+}
+
+.bc-card__cta .bc-icon { width: 2rem; height: 2rem; transition: opacity 100ms ease; }
 
 .bc-card__cta-spinner {
   display: none;
   position: absolute;
-  width: 1.6rem; height: 1.6rem;
-  border: 2px solid currentColor;
+  top: 50%;
+  left: 50%;
+  width: 1.8rem;
+  height: 1.8rem;
+  margin-top: -0.9rem;
+  margin-left: -0.9rem;
+  border: 2.5px solid currentColor;
   border-right-color: transparent;
   border-radius: 50%;
-  animation: bc-spin 700ms linear infinite;
+  animation: bc-spin 600ms linear infinite;
 }
 .bc-card__cta.is-loading .bc-icon { opacity: 0; }
 .bc-card__cta.is-loading .bc-card__cta-spinner { display: block; }
@@ -767,6 +784,31 @@ a { color: inherit; }
 .bc-card__cta--link { background-color: transparent; }
 
 @keyframes bc-spin { to { transform: rotate(360deg); } }
+
+/* PDP / cart-page primary buttons: same loading treatment */
+.bc-button {
+  position: relative;
+}
+.bc-button.is-loading {
+  cursor: wait;
+}
+.bc-button.is-loading > * {
+  opacity: 0;
+}
+.bc-button.is-loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1.8rem;
+  height: 1.8rem;
+  margin-top: -0.9rem;
+  margin-left: -0.9rem;
+  border: 2.5px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: bc-spin 600ms linear infinite;
+}
 
 /* Price */
 .bc-price { display: inline-flex; align-items: baseline; gap: 0.6rem; }

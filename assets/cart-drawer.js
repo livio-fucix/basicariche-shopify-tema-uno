@@ -1,17 +1,28 @@
 /* Basicariche v2.0 — cart-drawer.js
    Custom element <bc-cart-drawer> + open/close API + AJAX line updates.
-   Listens to:
-     - clicks on [data-bc-open-cart] (header cart link) -> open drawer (preventDefault)
-     - clicks on [data-bc-drawer-close] -> close drawer
-     - bcEvents 'cart:added' (from product-form) -> reload drawer markup
-     - bcEvents 'cart:update-line' (from quantity-input) -> AJAX /cart/change
+
+   Wires:
+     - clicks on [data-bc-open-cart] → preventDefault, open drawer
+     - clicks on [data-bc-drawer-close] → close drawer
+     - bcEvents 'cart:added' (from product-form) → swap markup with response
+       sections, update header count, open drawer
+     - bcEvents 'cart:update-line' (from quantity-input) → AJAX /cart/change.js
+       passing ?sections=cart-drawer,header → swap markup
 */
 
 (() => {
   'use strict';
 
   if (!window.bcEvents) {
-    window.bcEvents = { on() {}, emit() {} };
+    // Defensive: theme.js MUST run before this file. If it didn't, fall back
+    // to a tiny local bus so things don't crash.
+    window.bcEvents = (() => {
+      const m = new Map();
+      return {
+        on(e, cb) { (m.get(e) || m.set(e, new Set()).get(e)).add(cb); },
+        emit(e, p) { (m.get(e) || []).forEach((cb) => cb(p)); },
+      };
+    })();
   }
 
   const moneyFormat = window.Shopify?.money_format || '€{{amount}}';
@@ -25,10 +36,14 @@
     });
   }
 
-  function pluralizeTitle(count) {
-    return count === 1
-      ? `Carrello, ${count} prodotto`
-      : `Carrello, ${count} prodotti`;
+  // Replace the inner of an element with the inner of HTML matching a selector
+  function swapInner(target, html, selector) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    const fresh = tmp.querySelector(selector);
+    if (fresh && target) {
+      target.innerHTML = fresh.innerHTML;
+    }
   }
 
   if (!customElements.get('bc-cart-drawer')) {
@@ -39,16 +54,23 @@
           this.addEventListener('click', this.onClick.bind(this));
           this.addEventListener('keydown', this.onKey.bind(this));
 
-          // Header "open cart" buttons
+          // Header "open cart" buttons (rebind every time, in case header
+          // markup changes via section refresh)
+          this.bindOpeners();
+
+          window.bcEvents.on('cart:added', (payload) => this.onCartAdded(payload));
+          window.bcEvents.on('cart:update-line', (p) => this.updateLine(p));
+        }
+
+        bindOpeners() {
           document.querySelectorAll('[data-bc-open-cart]').forEach((el) => {
+            if (el.dataset.bcOpenCartBound === '1') return;
+            el.dataset.bcOpenCartBound = '1';
             el.addEventListener('click', (e) => {
               e.preventDefault();
               this.open();
             });
           });
-
-          window.bcEvents.on('cart:added', () => this.refresh().then(() => this.open()));
-          window.bcEvents.on('cart:update-line', (p) => this.updateLine(p));
         }
 
         onClick(e) {
@@ -58,15 +80,20 @@
         }
 
         onKey(e) {
-          if (e.key === 'Escape') this.close();
+          if (e.key === 'Escape' && this.isOpen()) this.close();
+        }
+
+        isOpen() {
+          return this.classList.contains('is-open');
         }
 
         open() {
           this.removeAttribute('hidden');
+          // Force reflow so the transition fires after removing hidden
+          void this.offsetWidth;
           this.classList.add('is-open');
           this.setAttribute('aria-hidden', 'false');
           document.documentElement.style.overflow = 'hidden';
-          // Move focus to close button
           requestAnimationFrame(() => this.querySelector('[data-bc-drawer-close]')?.focus());
         }
 
@@ -74,52 +101,68 @@
           this.classList.remove('is-open');
           this.setAttribute('aria-hidden', 'true');
           document.documentElement.style.overflow = '';
-          // Hide after transition
-          setTimeout(() => this.setAttribute('hidden', ''), 300);
+          // Wait for transition then remove from layout flow
+          setTimeout(() => {
+            if (!this.isOpen()) this.setAttribute('hidden', '');
+          }, 320);
+        }
+
+        // ---- Cart events ----
+        onCartAdded({ sections } = {}) {
+          // Open immediately — perceived snappy UX
+          this.open();
+          if (sections) {
+            this.applySections(sections);
+          } else {
+            // Fallback: re-fetch
+            this.refresh();
+          }
+        }
+
+        applySections(sections) {
+          if (sections['cart-drawer']) {
+            swapInner(this, sections['cart-drawer'], 'bc-cart-drawer');
+            this.bindOpeners();
+          }
+          if (sections.header) {
+            const targetHeader = document.querySelector('.bc-header');
+            if (targetHeader) {
+              swapInner(targetHeader, sections.header, '.bc-header');
+              this.bindOpeners();
+            }
+          }
         }
 
         async refresh() {
-          // Re-fetch the cart drawer section using Shopify Section Rendering API.
           try {
-            const res = await fetch(`${window.location.pathname}?sections=cart-drawer`, {
+            const res = await fetch(`${window.location.pathname}?sections=cart-drawer,header`, {
               headers: { 'X-Requested-With': 'XMLHttpRequest' },
             });
             if (res.ok) {
               const data = await res.json();
-              if (data['cart-drawer']) {
-                const tmp = document.createElement('div');
-                tmp.innerHTML = data['cart-drawer'];
-                const fresh = tmp.querySelector('bc-cart-drawer');
-                if (fresh) {
-                  this.innerHTML = fresh.innerHTML;
-                }
-              }
+              this.applySections(data);
             } else {
-              // Fallback: full reload of drawer via /cart.js
               await this.refreshFromCartJs();
             }
           } catch (e) {
             await this.refreshFromCartJs();
           }
-          // Re-bind close buttons
-          this.querySelectorAll('[data-bc-drawer-close]').forEach((el) => {
-            el.addEventListener('click', () => this.close());
-          });
-          // Update header count
-          this.updateHeaderCount();
         }
 
         async refreshFromCartJs() {
           const res = await fetch('/cart.js');
           const cart = await res.json();
-          this.renderCart(cart);
+          this.renderCartFallback(cart);
         }
 
-        renderCart(cart) {
-          // Minimal in-place re-render if section API isn't available
+        renderCartFallback(cart) {
+          // Best-effort in-place updates without section markup
           const titleEl = this.querySelector('[data-bc-cart-title]');
-          if (titleEl) titleEl.textContent = cart.item_count > 0 ? pluralizeTitle(cart.item_count) : 'Carrello';
-
+          if (titleEl) {
+            titleEl.textContent = cart.item_count > 0
+              ? (cart.item_count === 1 ? `Carrello, ${cart.item_count} prodotto` : `Carrello, ${cart.item_count} prodotti`)
+              : 'Carrello';
+          }
           const totalEl = this.querySelector('[data-bc-cart-total]');
           if (totalEl) totalEl.textContent = formatMoney(cart.total_price);
 
@@ -128,33 +171,34 @@
             if (cart.item_count > 0) footer.removeAttribute('hidden');
             else footer.setAttribute('hidden', '');
           }
-        }
-
-        updateHeaderCount() {
-          fetch('/cart.js')
-            .then((r) => r.json())
-            .then((cart) => {
-              document.querySelectorAll('[data-bc-cart-count]').forEach((el) => {
-                el.textContent = cart.item_count;
-                if (cart.item_count > 0) el.classList.remove('bc-header__cart-count--empty');
-                else el.classList.add('bc-header__cart-count--empty');
-              });
-            });
+          // Header count
+          document.querySelectorAll('[data-bc-cart-count]').forEach((el) => {
+            el.textContent = cart.item_count;
+            el.classList.toggle('bc-header__cart-count--empty', cart.item_count === 0);
+          });
         }
 
         async updateLine({ key, quantity }) {
           try {
             const res = await fetch('/cart/change.js', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ id: key, quantity }),
+              headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+              body: JSON.stringify({
+                id: key,
+                quantity,
+                sections: 'cart-drawer,header',
+                sections_url: window.location.pathname,
+              }),
             });
             if (!res.ok) throw new Error('change failed');
-            await this.refresh();
-            // Notify other components (e.g. main cart page) to reload
-            window.bcEvents.emit('cart:changed');
+            const data = await res.json();
+            if (data.sections) {
+              this.applySections(data.sections);
+            } else {
+              await this.refresh();
+            }
+            window.bcEvents.emit('cart:changed', data);
           } catch (e) {
-            // Last resort: full page reload
             window.location.reload();
           }
         }
@@ -162,7 +206,7 @@
     );
   }
 
-  // On the dedicated cart page, react to qty changes by submitting the form
+  // On the standalone cart page, qty changes submit the form
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.bc-cart-page__form input[name="updates[]"]').forEach((input) => {
       input.addEventListener('change', () => {

@@ -137,8 +137,13 @@
           if (!this.submit || this.submit.hasAttribute('disabled')) return;
           this.submit.classList.add('is-loading');
           this.submit.setAttribute('aria-busy', 'true');
+          this.submit.setAttribute('disabled', '');
 
           const fd = new FormData(this.form);
+          // Ask Shopify to also re-render the cart drawer + header in the same
+          // round trip via the Section Rendering API.
+          fd.append('sections', 'cart-drawer,header');
+          fd.append('sections_url', window.location.pathname);
 
           try {
             const res = await fetch(window.routes?.cart_add_url || '/cart/add.js', {
@@ -153,8 +158,15 @@
               return;
             }
 
-            // Success
-            window.bcEvents.emit('cart:added', { item: json });
+            // Success — fire event with rendered sections so the drawer can
+            // swap its markup without a second network call.
+            window.bcEvents.emit('cart:added', { item: json, sections: json.sections || {} });
+            // Re-enable the button (the drawer takes focus next)
+            this.submit.removeAttribute('disabled');
+            if (this.label) this.label.textContent = '✓';
+            setTimeout(() => {
+              if (this.label) this.label.textContent = 'Aggiungi al carrello';
+            }, 1500);
           } catch (err) {
             console.error('add to cart error', err);
             // Fallback: navigate to cart page
@@ -162,6 +174,7 @@
           } finally {
             this.submit.classList.remove('is-loading');
             this.submit.removeAttribute('aria-busy');
+            this.submit.removeAttribute('disabled');
           }
         }
 
