@@ -58,9 +58,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 3.4rem;
-  min-height: 3.4rem;
-  padding: 0.4rem 1rem;
+  min-width: 4.4rem;
+  min-height: 4.4rem;
+  padding: 0.6rem 1.4rem;
   border: 1px solid rgba(var(--color-foreground), 0.25);
   border-radius: 999px;
   font-size: 1.3rem;
@@ -257,10 +257,10 @@
 
 @media screen and (max-width: 749px) {
   .card-quick-add-inline__pill {
-    min-width: 3rem;
-    min-height: 3rem;
-    padding: 0.3rem 0.8rem;
-    font-size: 1.2rem;
+    min-width: 4.4rem;
+    min-height: 4.4rem;
+    padding: 0.6rem 1.2rem;
+    font-size: 1.3rem;
   }
 
   .card-quick-add-inline__submit {

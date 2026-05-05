@@ -179,3 +179,195 @@
     font-size: 1.3rem;
   }
 }
+
+/* === Cart drawer (uppa style) === */
+
+cart-drawer .drawer__header {
+  padding: 2rem 2rem 1.4rem;
+  border-bottom: 1px solid rgba(var(--bc-text-strong, 15 20 25), 0.08);
+}
+
+cart-drawer .drawer__heading {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  color: rgb(var(--bc-accent));
+  margin: 0;
+}
+
+cart-drawer .drawer__heading-count {
+  color: rgb(var(--bc-accent));
+  font-weight: 800;
+}
+
+cart-drawer .drawer__close {
+  color: rgb(var(--bc-accent));
+}
+
+cart-drawer .drawer__inner {
+  background-color: #fff;
+}
+
+cart-drawer .drawer__contents,
+cart-drawer .cart-drawer__form {
+  padding: 0 2rem;
+}
+
+/* Quantity selector: small grey square boxes */
+cart-drawer quantity-input,
+cart-drawer .quantity {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 0;
+  width: auto;
+}
+
+cart-drawer .quantity__button,
+cart-drawer .quantity__input {
+  border: 0;
+  background-color: rgba(var(--bc-text-strong, 15 20 25), 0.06);
+  border-radius: 6px;
+  width: 3.4rem;
+  height: 3.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: rgb(var(--bc-text-strong, 15 20 25));
+  padding: 0;
+}
+
+cart-drawer .quantity__button:hover,
+cart-drawer .quantity__button:focus-visible {
+  background-color: rgba(var(--bc-text-strong, 15 20 25), 0.12);
+}
+
+cart-drawer .quantity__input {
+  text-align: center;
+  background-color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(var(--bc-text-strong, 15 20 25), 0.12);
+}
+
+cart-drawer .quantity__input:focus-visible {
+  box-shadow: inset 0 0 0 2px rgb(var(--bc-secondary));
+  outline: none;
+}
+
+/* Footer: totals and CTAs */
+cart-drawer .cart-drawer__footer {
+  padding: 1.6rem 2rem 2.4rem;
+  background-color: rgb(var(--bc-bg-soft));
+  border-top: 1px solid rgba(var(--bc-text-strong, 15 20 25), 0.08);
+}
+
+cart-drawer .totals {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 1rem 0 1.6rem;
+}
+
+cart-drawer .totals__total,
+cart-drawer .totals__total-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: rgb(var(--bc-text-strong));
+  margin: 0;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+cart-drawer .cart__ctas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin: 0;
+}
+
+cart-drawer .cart__checkout-button {
+  width: 100%;
+  background-color: rgb(var(--bc-accent));
+  color: #fff;
+  border: 0;
+  border-radius: 999px;
+  padding: 1.4rem 2rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  min-height: 5rem;
+  transition: filter 150ms ease, transform 100ms ease;
+}
+
+cart-drawer .cart__checkout-button:hover:not([disabled]) {
+  filter: brightness(0.95);
+}
+
+cart-drawer .cart__checkout-button:active:not([disabled]) {
+  transform: scale(0.99);
+}
+
+cart-drawer .cart__continue-shopping {
+  width: 100%;
+  background-color: transparent;
+  color: rgb(var(--bc-accent));
+  border: 1.5px solid rgb(var(--bc-accent));
+  border-radius: 999px;
+  padding: 1.3rem 2rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+  min-height: 5rem;
+}
+
+cart-drawer .cart__continue-shopping:hover,
+cart-drawer .cart__continue-shopping:focus-visible {
+  background-color: rgb(var(--bc-accent));
+  color: #fff;
+}
+
+/* Cart item rows: cleaner spacing, no zebra */
+cart-drawer .cart-item {
+  border-bottom: 1px solid rgba(var(--bc-text-strong, 15 20 25), 0.06);
+}
+
+cart-drawer .cart-item:last-child {
+  border-bottom: 0;
+}
+
+cart-drawer .cart-item__name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: rgb(var(--bc-text-strong));
+}
+
+cart-drawer .cart-item__price-wrapper .price--end {
+  color: rgb(var(--bc-text-strong));
+  font-weight: 600;
+}
+
+/* Empty state */
+cart-drawer .drawer__heading--empty {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: rgb(var(--bc-text-strong));
+}
+
+cart-drawer .drawer__close {
+  background: transparent;
+  border: 0;
+}
+
+@media screen and (max-width: 749px) {
+  cart-drawer .drawer__heading {
+    font-size: 1.4rem;
+  }
+
+  cart-drawer .totals__total,
+  cart-drawer .totals__total-value {
+    font-size: 1.6rem;
+  }
+}

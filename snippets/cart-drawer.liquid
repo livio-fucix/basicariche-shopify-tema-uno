@@ -62,7 +62,12 @@
         </div>
       {%- endif -%}
       <div class="drawer__header">
-        <h2 class="drawer__heading">{{ 'sections.cart.title' | t }}</h2>
+        <h2 class="drawer__heading">
+          {{ 'sections.cart.title' | t -}}
+          {%- if cart.item_count > 0 -%}
+            <span class="drawer__heading-count">,&nbsp;{{ cart.item_count }} {% if cart.item_count == 1 %}prodotto{% else %}prodotti{% endif %}</span>
+          {%- endif -%}
+        </h2>
         <button
           class="drawer__close"
           type="button"
@@ -573,6 +578,13 @@
             {% endif %}
           >
             {{ 'sections.cart.checkout' | t }}
+          </button>
+          <button
+            type="button"
+            class="cart__continue-shopping button button--secondary"
+            onclick="this.closest('cart-drawer').close()"
+          >
+            Continua lo shopping
           </button>
         </div>
       </div>
