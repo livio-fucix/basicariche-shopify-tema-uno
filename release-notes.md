@@ -1,5 +1,24 @@
 # Basicariche theme — release notes
 
+## v1.2 — 2026-05-05
+
+- Fix: clicking variant pills/swatches on product cards no longer
+  navigates to the product page. The inline quick-add block now sits
+  above Dawn's full-card click overlay (`z-index: 2`) so radios and
+  the cart button capture clicks.
+- Removed: newsletter signup is disabled by default (footer-group
+  setting and section schema default).
+- Added: `category-pills` section — a horizontal pill bar built from
+  any Shopify navigation menu, included by default in the header
+  group below the main header. Mobile-first with horizontal scroll.
+- Added: theme version label in the footer copyright row.
+- Palette refresh: red accent (#D2381F), navy secondary (#0F2F5C),
+  ivory soft background (#FAF7F2), gold highlight (#F4C842). All
+  text/background pairs verified at WCAG AA.
+- Refactor: product cards now read as coloured ivory tiles with a
+  centred image, bolder titles, muted subtitle/vendor lines, and an
+  emphasised price. Card borders/shadows removed.
+
 ## v1.1 — 2026-05-05
 
 - Fixed: inline quick-add was not visible on the catalogue / homepage

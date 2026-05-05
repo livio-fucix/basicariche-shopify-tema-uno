@@ -3,6 +3,8 @@
 .card-quick-add-inline {
   display: block;
   padding: 0.8rem 0 0;
+  position: relative;
+  z-index: 2;
 }
 
 .card-quick-add-inline__form {

@@ -35,10 +35,20 @@
         "padding_top": 20,
         "padding_bottom": 20
       }
+    },
+    "category-pills": {
+      "type": "category-pills",
+      "settings": {
+        "menu": "main-menu",
+        "color_scheme": "scheme-1",
+        "padding_top": 16,
+        "padding_bottom": 16
+      }
     }
   },
   "order": [
     "announcement-bar",
-    "header"
+    "header",
+    "category-pills"
   ]
 }
