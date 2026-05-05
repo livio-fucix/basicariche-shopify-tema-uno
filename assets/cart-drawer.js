@@ -51,8 +51,9 @@
       'bc-cart-drawer',
       class extends HTMLElement {
         connectedCallback() {
+          if (window.BC_DEBUG) console.log('[bc] cart-drawer connected');
           this.addEventListener('click', this.onClick.bind(this));
-          this.addEventListener('keydown', this.onKey.bind(this));
+          document.addEventListener('keydown', this.onKey.bind(this));
 
           // Header "open cart" buttons (rebind every time, in case header
           // markup changes via section refresh)
@@ -88,9 +89,7 @@
         }
 
         open() {
-          this.removeAttribute('hidden');
-          // Force reflow so the transition fires after removing hidden
-          void this.offsetWidth;
+          if (window.BC_DEBUG) console.log('[bc] drawer.open()');
           this.classList.add('is-open');
           this.setAttribute('aria-hidden', 'false');
           document.documentElement.style.overflow = 'hidden';
@@ -98,13 +97,10 @@
         }
 
         close() {
+          if (window.BC_DEBUG) console.log('[bc] drawer.close()');
           this.classList.remove('is-open');
           this.setAttribute('aria-hidden', 'true');
           document.documentElement.style.overflow = '';
-          // Wait for transition then remove from layout flow
-          setTimeout(() => {
-            if (!this.isOpen()) this.setAttribute('hidden', '');
-          }, 320);
         }
 
         // ---- Cart events ----

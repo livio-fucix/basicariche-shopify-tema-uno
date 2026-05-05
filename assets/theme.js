@@ -1,5 +1,9 @@
 /* Basicariche v2.0 — theme.js
-   Mobile nav toggle + tiny event bus + thumb gallery + utilities. */
+   Mobile nav toggle + tiny event bus + thumb gallery + utilities.
+
+   To enable verbose logging in the console, run:
+     window.BC_DEBUG = true
+   then reload the page. */
 
 (() => {
   'use strict';
@@ -10,10 +14,12 @@
     on(event, cb) {
       if (!listeners.has(event)) listeners.set(event, new Set());
       listeners.get(event).add(cb);
+      if (window.BC_DEBUG) console.log('[bc] on', event);
       return () => listeners.get(event).delete(cb);
     },
     emit(event, payload) {
       const set = listeners.get(event);
+      if (window.BC_DEBUG) console.log('[bc] emit', event, '→', set ? set.size + ' listeners' : '0 listeners');
       if (!set) return;
       for (const cb of set) cb(payload);
     },
