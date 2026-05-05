@@ -134,6 +134,7 @@
 
         async onSubmit(e) {
           e.preventDefault();
+          if (window.BC_DEBUG) console.log('[bc] product-form submit');
           if (!this.submit || this.submit.hasAttribute('disabled')) return;
           this.submit.classList.add('is-loading');
           this.submit.setAttribute('aria-busy', 'true');
@@ -160,6 +161,7 @@
 
             // Success — fire event with rendered sections so the drawer can
             // swap its markup without a second network call.
+            if (window.BC_DEBUG) console.log('[bc] /cart/add.js OK', json);
             window.bcEvents.emit('cart:added', { item: json, sections: json.sections || {} });
             // Re-enable the button (the drawer takes focus next)
             this.submit.removeAttribute('disabled');
