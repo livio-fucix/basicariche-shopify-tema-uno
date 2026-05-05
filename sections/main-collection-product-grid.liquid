@@ -22,6 +22,12 @@
   <script src="{{ 'quick-order-list.js' | asset_url }}" defer="defer"></script>
 {%- endif -%}
 
+{%- if section.settings.quick_add == 'inline' -%}
+  {{ 'card-quick-add-inline.css' | asset_url | stylesheet_tag }}
+  <script src="{{ 'product-form.js' | asset_url }}" defer="defer"></script>
+  <script src="{{ 'card-quick-add-inline.js' | asset_url }}" defer="defer"></script>
+{%- endif -%}
+
 {%- style -%}
   .section-{{ section.id }}-padding {
     padding-top: {{ section.settings.padding_top | times: 0.75 | round: 0 }}px;
@@ -341,6 +347,10 @@
         {
           "value": "bulk",
           "label": "t:sections.main-collection-product-grid.settings.quick_add.options.option_3"
+        },
+        {
+          "value": "inline",
+          "label": "Inline (varianti sulla card)"
         }
       ]
     },
