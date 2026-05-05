@@ -1,24 +1,33 @@
-/* Basicariche v2.0 — product-form.js
+/* Basicariche v2.0.x — product-form.js
+   Direct cart-drawer reference (no event bus indirection).
+   Permanent diagnostic logging.
+
    Custom elements:
-     <bc-product-form>: variant-aware form, AJAX add to cart, fires 'cart:added'.
-       Used both on the product card (collection) AND on the PDP main product section.
-     <bc-pdp-variant-picker>: PDP-only variant picker (full size).
+     <bc-product-form>      : variant-aware form, AJAX add to cart, then
+                              calls drawer.open(response) DIRECTLY.
+     <bc-pdp-variant-picker>: PDP variant picker (just a marker; change
+                              events bubble up to the host bc-product-form).
 */
 
 (() => {
   'use strict';
 
-  if (!window.bcEvents) window.bcEvents = { on() {}, emit() {} };
+  const log = (...args) => console.log('[bc-form]', ...args);
 
   function findVariant(variants, selection) {
     return variants.find((v) =>
-      selection.every((val, i) => val === null || val === undefined || v.options[i] === val)
+      selection.every(
+        (val, i) => val === null || val === undefined || v.options[i] === val
+      )
     );
   }
 
   function formatMoney(cents) {
     if (window.Shopify && typeof Shopify.formatMoney === 'function') {
-      return Shopify.formatMoney(cents, window.Shopify.money_format || '€{{amount}}');
+      return Shopify.formatMoney(
+        cents,
+        window.Shopify.money_format || '€{{amount}}'
+      );
     }
     return (cents / 100).toLocaleString(undefined, {
       style: 'currency',
@@ -26,7 +35,14 @@
     });
   }
 
-  // ---- <bc-product-form> ----
+  function getCartDrawer() {
+    return (
+      window.bcCartDrawer ||
+      document.querySelector('bc-cart-drawer') ||
+      null
+    );
+  }
+
   if (!customElements.get('bc-product-form')) {
     customElements.define(
       'bc-product-form',
@@ -39,14 +55,24 @@
             this.variants = [];
           }
           this.form = this.querySelector('[data-bc-form]');
-          this.variantInput = this.querySelector('[data-bc-variant-id]') || this.querySelector('[data-bc-pdp-variant-id]');
+          this.variantInput =
+            this.querySelector('[data-bc-variant-id]') ||
+            this.querySelector('[data-bc-pdp-variant-id]');
           this.submit = this.querySelector('[data-bc-submit]');
           this.label = this.querySelector('[data-bc-cta-label]');
           this.optionFieldsets = this.querySelectorAll('[data-bc-option-position]');
           this.priceBlock = document.querySelector('[data-bc-pdp-price]');
 
+          if (!this.form) {
+            console.error(
+              '[bc-form] CRITICAL: form not found inside <bc-product-form>',
+              this
+            );
+            return;
+          }
+
           this.addEventListener('change', this.onChange.bind(this));
-          if (this.form) this.form.addEventListener('submit', this.onSubmit.bind(this));
+          this.form.addEventListener('submit', this.onSubmit.bind(this));
         }
 
         currentSelection() {
@@ -58,8 +84,7 @@
 
         onChange() {
           if (!this.optionFieldsets.length) return;
-          const selection = this.currentSelection();
-          const variant = findVariant(this.variants, selection);
+          const variant = findVariant(this.variants, this.currentSelection());
           if (!variant) return this.markUnavailable();
           this.applyVariant(variant);
         }
@@ -75,12 +100,14 @@
             if (checked) el.textContent = checked.value;
           });
 
-          // Update card price (inline) or PDP price block
+          // Update card or PDP price
           const cardPrice = this.querySelector('.bc-card__price');
           if (cardPrice) {
             cardPrice.innerHTML = '';
             const wrap = document.createElement('span');
-            wrap.className = 'bc-price' + (variant.compare_at_price > variant.price ? ' bc-price--on-sale' : '');
+            wrap.className =
+              'bc-price' +
+              (variant.compare_at_price > variant.price ? ' bc-price--on-sale' : '');
             if (variant.compare_at_price && variant.compare_at_price > variant.price) {
               const s = document.createElement('span');
               s.className = 'bc-price__compare';
@@ -93,10 +120,12 @@
             wrap.appendChild(cur);
             cardPrice.appendChild(wrap);
           } else if (this.priceBlock) {
-            // PDP price update
             const pdpPrice = this.priceBlock.querySelector('.bc-price');
             if (pdpPrice) {
-              pdpPrice.classList.toggle('bc-price--on-sale', variant.compare_at_price > variant.price);
+              pdpPrice.classList.toggle(
+                'bc-price--on-sale',
+                variant.compare_at_price > variant.price
+              );
               const compare = pdpPrice.querySelector('.bc-price__compare');
               const current = pdpPrice.querySelector('.bc-price__current');
               if (current) current.textContent = formatMoney(variant.price);
@@ -108,9 +137,7 @@
                   s.textContent = formatMoney(variant.compare_at_price);
                   pdpPrice.insertBefore(s, current);
                 }
-              } else if (compare) {
-                compare.remove();
-              }
+              } else if (compare) compare.remove();
             }
           }
 
@@ -134,45 +161,67 @@
 
         async onSubmit(e) {
           e.preventDefault();
-          if (window.BC_DEBUG) console.log('[bc] product-form submit');
-          if (!this.submit || this.submit.hasAttribute('disabled')) return;
+          log('form submit intercepted');
+
+          if (!this.submit) return;
+          if (this.submit.hasAttribute('disabled') && !this.submit.classList.contains('is-loading')) {
+            log('submit disabled, ignoring');
+            return;
+          }
+
           this.submit.classList.add('is-loading');
           this.submit.setAttribute('aria-busy', 'true');
           this.submit.setAttribute('disabled', '');
 
           const fd = new FormData(this.form);
-          // Ask Shopify to also re-render the cart drawer + header in the same
-          // round trip via the Section Rendering API.
+          // Section Rendering API: ask Shopify to also render these sections
+          // in the response. /cart/add.js supports this since 2022-04 API.
           fd.append('sections', 'cart-drawer,header');
           fd.append('sections_url', window.location.pathname);
 
-          try {
-            const res = await fetch(window.routes?.cart_add_url || '/cart/add.js', {
-              method: 'POST',
-              headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
-              body: fd,
-            });
-            const json = await res.json();
+          log('POST /cart/add.js', {
+            id: fd.get('id'),
+            qty: fd.get('quantity'),
+          });
 
-            if (!res.ok) {
+          try {
+            const res = await fetch(
+              (window.routes && window.routes.cart_add_url) || '/cart/add.js',
+              {
+                method: 'POST',
+                headers: {
+                  'X-Requested-With': 'XMLHttpRequest',
+                  Accept: 'application/json',
+                },
+                body: fd,
+              }
+            );
+            const json = await res.json();
+            log('/cart/add.js response', res.status, json);
+
+            if (!res.ok || json.status) {
               this.handleError(json);
               return;
             }
 
-            // Success — fire event with rendered sections so the drawer can
-            // swap its markup without a second network call.
-            if (window.BC_DEBUG) console.log('[bc] /cart/add.js OK', json);
-            window.bcEvents.emit('cart:added', { item: json, sections: json.sections || {} });
-            // Re-enable the button (the drawer takes focus next)
-            this.submit.removeAttribute('disabled');
-            if (this.label) this.label.textContent = '✓';
-            setTimeout(() => {
-              if (this.label) this.label.textContent = 'Aggiungi al carrello';
-            }, 1500);
+            // Direct call: no event bus indirection.
+            const drawer = getCartDrawer();
+            if (drawer && typeof drawer.open === 'function') {
+              log('calling drawer.open() directly');
+              drawer.open(json);
+            } else {
+              log('no drawer present, navigating to /cart');
+              window.location.href = '/cart';
+              return;
+            }
+
+            this.flashSuccess();
           } catch (err) {
-            console.error('add to cart error', err);
-            // Fallback: navigate to cart page
-            window.location.href = window.routes?.cart_url || '/cart';
+            console.error('[bc-form] add-to-cart error', err);
+            this.handleError({ description: 'Errore di rete — riprova' });
+            // Do NOT navigate away. Try to refresh drawer with current cart.
+            const drawer = getCartDrawer();
+            if (drawer) drawer.refresh().catch(() => {});
           } finally {
             this.submit.classList.remove('is-loading');
             this.submit.removeAttribute('aria-busy');
@@ -180,23 +229,29 @@
           }
         }
 
+        flashSuccess() {
+          if (!this.label) return;
+          const original = this.label.textContent;
+          this.label.textContent = 'Aggiunto ✓';
+          setTimeout(() => {
+            this.label.textContent = original;
+          }, 1500);
+        }
+
         handleError(json) {
-          // Show inline error in label
-          if (this.label) this.label.textContent = json.description || 'Errore — riprova';
+          const msg =
+            (json && (json.description || json.message)) || 'Errore — riprova';
+          if (this.label) this.label.textContent = msg.slice(0, 60);
           this.submit?.setAttribute('disabled', '');
           setTimeout(() => {
             this.submit?.removeAttribute('disabled');
             if (this.label) this.label.textContent = 'Aggiungi al carrello';
-          }, 2000);
+          }, 3000);
         }
       }
     );
   }
 
-  // ---- <bc-pdp-variant-picker> shares the same change-event flow ----
-  // The actual variant-id input lives inside the same <bc-product-form>,
-  // so when this picker is nested in <bc-product-form> on the PDP, change events
-  // bubble up and apply via the host.
   if (!customElements.get('bc-pdp-variant-picker')) {
     customElements.define('bc-pdp-variant-picker', class extends HTMLElement {});
   }

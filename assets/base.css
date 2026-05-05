@@ -1092,6 +1092,11 @@ a { color: inherit; }
 .bc-qty__input::-webkit-outer-spin-button,
 .bc-qty__input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
+/* ---------- Body scroll lock ---------- */
+body.bc-no-scroll {
+  overflow: hidden;
+}
+
 /* ---------- Cart drawer ---------- */
 /* Always rendered, off-screen by default. No 'hidden' attribute, no
    visibility: hidden — both make CSS transitions unreliable. */
@@ -1104,6 +1109,13 @@ a { color: inherit; }
 }
 .bc-drawer.is-open {
   pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bc-drawer__panel,
+  .bc-drawer__overlay {
+    transition: none !important;
+  }
 }
 
 .bc-drawer__overlay {

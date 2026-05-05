@@ -111,7 +111,7 @@
     {%- if quick_add_enabled and product.available -%}
       <bc-product-form class="bc-card__form" data-section="{{ section_id }}" data-product="{{ product.id }}">
         <script type="application/json" data-bc-variants>{{ product.variants | json }}</script>
-        <form action="{{ routes.cart_add_url }}" method="post" enctype="multipart/form-data" novalidate data-bc-form>
+        <form action="{{ routes.cart_add_url }}" method="post" novalidate data-bc-form>
           <input type="hidden" name="form_type" value="product">
           <input type="hidden" name="utf8" value="✓">
           <input type="hidden" name="id" value="{{ current_variant.id }}" data-bc-variant-id>
