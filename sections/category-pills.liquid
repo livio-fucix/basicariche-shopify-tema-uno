@@ -1,115 +1,46 @@
-{{ 'section-category-pills.css' | asset_url | stylesheet_tag }}
-
-{%- liquid
-  assign linklist = linklists[section.settings.menu]
--%}
-
-<div
-  class="category-pills section-{{ section.id }}-padding color-{{ section.settings.color_scheme }} gradient"
->
-  <nav
-    class="category-pills__inner page-width"
-    aria-label="{{ section.settings.title | default: 'Categorie' | escape }}"
-  >
-    {%- if linklist != blank -%}
-      <ul class="category-pills__list list-unstyled">
-        {%- for link in linklist.links -%}
-          {%- liquid
-            assign is_active = false
-            if link.active or link.child_active
-              assign is_active = true
-            endif
-          -%}
-          <li class="category-pills__item">
+{%- if section.settings.menu != blank -%}
+  <nav class="bc-pills" aria-label="{{ section.settings.heading | default: 'Categorie' | escape }}">
+    <div class="bc-container">
+      <ul class="bc-pills__list">
+        {%- for link in linklists[section.settings.menu].links -%}
+          {%- assign is_active = false -%}
+          {%- if link.active or link.child_active -%}
+            {%- assign is_active = true -%}
+          {%- endif -%}
+          <li class="bc-pills__item">
             <a
               href="{{ link.url }}"
-              class="category-pills__pill{% if is_active %} category-pills__pill--active{% endif %}"
+              class="bc-pills__pill{% if is_active %} bc-pills__pill--active{% endif %}"
               {% if is_active %}aria-current="page"{% endif %}
             >
-              {{- link.title | escape -}}
+              {{ link.title | escape }}
             </a>
           </li>
         {%- endfor -%}
       </ul>
-    {%- else -%}
-      <p class="category-pills__empty">
-        {{ 'sections.category_pills.no_menu' | t: default: 'Seleziona un menu nelle impostazioni della sezione.' }}
-      </p>
-    {%- endif -%}
+    </div>
   </nav>
-</div>
-
-{%- style -%}
-  .section-{{ section.id }}-padding {
-    padding-top: {{ section.settings.padding_top | times: 0.75 | round: 0 }}px;
-    padding-bottom: {{ section.settings.padding_bottom | times: 0.75 | round: 0 }}px;
-  }
-
-  @media screen and (min-width: 750px) {
-    .section-{{ section.id }}-padding {
-      padding-top: {{ section.settings.padding_top }}px;
-      padding-bottom: {{ section.settings.padding_bottom }}px;
-    }
-  }
-{%- endstyle -%}
+{%- endif -%}
 
 {% schema %}
 {
-  "name": "Categorie a pill",
-  "tag": "section",
-  "class": "section section-category-pills",
+  "name": "t:sections.category_pills.name",
   "settings": [
     {
       "type": "link_list",
       "id": "menu",
-      "default": "main-menu",
-      "label": "Menu"
+      "label": "Menu",
+      "default": "main-menu"
     },
     {
-      "type": "select",
-      "id": "color_scheme",
-      "options": [
-        { "value": "scheme-1", "label": "t:sections.all.colors.scheme_1" },
-        { "value": "scheme-2", "label": "t:sections.all.colors.scheme_2" },
-        { "value": "scheme-3", "label": "t:sections.all.colors.scheme_3" },
-        { "value": "scheme-4", "label": "t:sections.all.colors.scheme_4" },
-        { "value": "scheme-5", "label": "t:sections.all.colors.scheme_5" }
-      ],
-      "default": "scheme-1",
-      "label": "t:sections.all.colors.label"
-    },
-    {
-      "type": "header",
-      "content": "t:sections.all.padding.section_padding_heading"
-    },
-    {
-      "type": "range",
-      "id": "padding_top",
-      "min": 0,
-      "max": 100,
-      "step": 4,
-      "unit": "px",
-      "label": "t:sections.all.padding.padding_top",
-      "default": 16
-    },
-    {
-      "type": "range",
-      "id": "padding_bottom",
-      "min": 0,
-      "max": 100,
-      "step": 4,
-      "unit": "px",
-      "label": "t:sections.all.padding.padding_bottom",
-      "default": 16
+      "type": "text",
+      "id": "heading",
+      "label": "Heading (per screen reader)",
+      "default": "Categorie"
     }
   ],
   "presets": [
-    {
-      "name": "Categorie a pill"
-    }
-  ],
-  "enabled_on": {
-    "groups": ["header", "*"]
-  }
+    { "name": "t:sections.category_pills.name" }
+  ]
 }
 {% endschema %}

@@ -1,0 +1,80 @@
+<section class="bc-section bc-cart-page">
+  <div class="bc-container">
+    <h1 class="bc-cart-page__title">
+      {%- if cart.item_count > 0 -%}
+        {%- if cart.item_count == 1 -%}
+          {{ 'cart.title_with_count_one' | t: count: cart.item_count }}
+        {%- else -%}
+          {{ 'cart.title_with_count_other' | t: count: cart.item_count }}
+        {%- endif -%}
+      {%- else -%}
+        {{ 'cart.title' | t }}
+      {%- endif -%}
+    </h1>
+
+    {%- if cart.item_count > 0 -%}
+      <form action="{{ routes.cart_url }}" method="post" novalidate class="bc-cart-page__form">
+        <ul class="bc-cart-page__items">
+          {%- for item in cart.items -%}
+            <li class="bc-cart-page__item" data-key="{{ item.key }}">
+              <a href="{{ item.url }}" class="bc-cart-page__thumb">
+                {%- if item.image -%}
+                  <img src="{{ item.image | image_url: width: 200 }}" alt="{{ item.title | escape }}" width="100" height="100" loading="lazy">
+                {%- endif -%}
+              </a>
+              <div class="bc-cart-page__details">
+                <a href="{{ item.url }}" class="bc-cart-page__name">{{ item.product.title }}</a>
+                {%- unless item.product.has_only_default_variant -%}
+                  <p class="bc-cart-page__variant">{{ item.variant.title }}</p>
+                {%- endunless -%}
+                <bc-quantity-input class="bc-qty" data-key="{{ item.key }}">
+                  <button type="button" class="bc-qty__btn" data-bc-qty="decrement" aria-label="{{ 'products.decrease' | t }}">{% render 'icon', name: 'minus' %}</button>
+                  <input
+                    type="number"
+                    name="updates[]"
+                    class="bc-qty__input"
+                    value="{{ item.quantity }}"
+                    min="0"
+                    aria-label="{{ 'products.quantity' | t }}"
+                    data-bc-qty-input
+                  >
+                  <button type="button" class="bc-qty__btn" data-bc-qty="increment" aria-label="{{ 'products.increase' | t }}">{% render 'icon', name: 'plus' %}</button>
+                </bc-quantity-input>
+              </div>
+              <div class="bc-cart-page__price">{{ item.final_line_price | money }}</div>
+            </li>
+          {%- endfor -%}
+        </ul>
+
+        <div class="bc-cart-page__summary">
+          {%- if settings.show_cart_note -%}
+            <label for="bc-cart-note" class="bc-cart-page__note-label">{{ 'cart.note' | t }}</label>
+            <textarea name="note" id="bc-cart-note" class="bc-cart-page__note">{{ cart.note }}</textarea>
+          {%- endif -%}
+
+          <div class="bc-cart-page__total">
+            <span>{{ 'cart.total' | t }}</span>
+            <span>{{ cart.total_price | money_with_currency }}</span>
+          </div>
+          <p class="bc-cart-page__taxes">{{ 'cart.taxes_included' | t }}</p>
+
+          <div class="bc-cart-page__ctas">
+            <button type="submit" name="checkout" class="bc-button bc-button--primary bc-button--full">{{ 'cart.checkout' | t }}</button>
+            <a href="{{ routes.all_products_collection_url }}" class="bc-button bc-button--outline bc-button--full">{{ 'cart.continue_shopping' | t }}</a>
+          </div>
+        </div>
+      </form>
+    {%- else -%}
+      <p class="bc-cart-page__empty">{{ 'cart.empty' | t }}</p>
+      <a href="{{ routes.all_products_collection_url }}" class="bc-button bc-button--primary">{{ 'cart.continue_shopping' | t }}</a>
+    {%- endif -%}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "t:sections.main_cart.name",
+  "settings": [],
+  "enabled_on": { "templates": ["cart"] }
+}
+{% endschema %}

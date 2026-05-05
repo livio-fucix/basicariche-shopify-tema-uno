@@ -1,142 +1,188 @@
-if (!customElements.get('product-form')) {
-  customElements.define(
-    'product-form',
-    class ProductForm extends HTMLElement {
-      constructor() {
-        super();
+/* Basicariche v2.0 — product-form.js
+   Custom elements:
+     <bc-product-form>: variant-aware form, AJAX add to cart, fires 'cart:added'.
+       Used both on the product card (collection) AND on the PDP main product section.
+     <bc-pdp-variant-picker>: PDP-only variant picker (full size).
+*/
 
-        this.form = this.querySelector('form');
-        this.variantIdInput.disabled = false;
-        this.form.addEventListener('submit', this.onSubmitHandler.bind(this));
-        this.cart = document.querySelector('cart-notification') || document.querySelector('cart-drawer');
-        this.submitButton = this.querySelector('[type="submit"]');
-        this.submitButtonText = this.submitButton.querySelector('span');
+(() => {
+  'use strict';
 
-        if (document.querySelector('cart-drawer')) this.submitButton.setAttribute('aria-haspopup', 'dialog');
+  if (!window.bcEvents) window.bcEvents = { on() {}, emit() {} };
 
-        this.hideErrors = this.dataset.hideErrors === 'true';
-      }
+  function findVariant(variants, selection) {
+    return variants.find((v) =>
+      selection.every((val, i) => val === null || val === undefined || v.options[i] === val)
+    );
+  }
 
-      onSubmitHandler(evt) {
-        evt.preventDefault();
-        if (this.submitButton.getAttribute('aria-disabled') === 'true') return;
-
-        this.handleErrorMessage();
-
-        this.submitButton.setAttribute('aria-disabled', true);
-        this.submitButton.classList.add('loading');
-        this.querySelector('.loading__spinner').classList.remove('hidden');
-
-        const config = fetchConfig('javascript');
-        config.headers['X-Requested-With'] = 'XMLHttpRequest';
-        delete config.headers['Content-Type'];
-
-        const formData = new FormData(this.form);
-        if (this.cart) {
-          formData.append(
-            'sections',
-            this.cart.getSectionsToRender().map((section) => section.id)
-          );
-          formData.append('sections_url', window.location.pathname);
-          this.cart.setActiveElement(document.activeElement);
-        }
-        config.body = formData;
-
-        fetch(`${routes.cart_add_url}`, config)
-          .then((response) => response.json())
-          .then((response) => {
-            if (response.status) {
-              publish(PUB_SUB_EVENTS.cartError, {
-                source: 'product-form',
-                productVariantId: formData.get('id'),
-                errors: response.errors || response.description,
-                message: response.message,
-              });
-              this.handleErrorMessage(response.description);
-
-              const soldOutMessage = this.submitButton.querySelector('.sold-out-message');
-              if (!soldOutMessage) return;
-              this.submitButton.setAttribute('aria-disabled', true);
-              this.submitButtonText.classList.add('hidden');
-              soldOutMessage.classList.remove('hidden');
-              this.error = true;
-              return;
-            } else if (!this.cart) {
-              window.location = window.routes.cart_url;
-              return;
-            }
-
-            const startMarker = CartPerformance.createStartingMarker('add:wait-for-subscribers');
-            if (!this.error)
-              publish(PUB_SUB_EVENTS.cartUpdate, {
-                source: 'product-form',
-                productVariantId: formData.get('id'),
-                cartData: response,
-              }).then(() => {
-                CartPerformance.measureFromMarker('add:wait-for-subscribers', startMarker);
-              });
-            this.error = false;
-            const quickAddModal = this.closest('quick-add-modal');
-            if (quickAddModal) {
-              document.body.addEventListener(
-                'modalClosed',
-                () => {
-                  setTimeout(() => {
-                    CartPerformance.measure("add:paint-updated-sections", () => {
-                      this.cart.renderContents(response);
-                    });
-                  });
-                },
-                { once: true }
-              );
-              quickAddModal.hide(true);
-            } else {
-              CartPerformance.measure("add:paint-updated-sections", () => {
-                this.cart.renderContents(response);
-              });
-            }
-          })
-          .catch((e) => {
-            console.error(e);
-          })
-          .finally(() => {
-            this.submitButton.classList.remove('loading');
-            if (this.cart && this.cart.classList.contains('is-empty')) this.cart.classList.remove('is-empty');
-            if (!this.error) this.submitButton.removeAttribute('aria-disabled');
-            this.querySelector('.loading__spinner').classList.add('hidden');
-
-            CartPerformance.measureFromEvent("add:user-action", evt);
-          });
-      }
-
-      handleErrorMessage(errorMessage = false) {
-        if (this.hideErrors) return;
-
-        this.errorMessageWrapper =
-          this.errorMessageWrapper || this.querySelector('.product-form__error-message-wrapper');
-        if (!this.errorMessageWrapper) return;
-        this.errorMessage = this.errorMessage || this.errorMessageWrapper.querySelector('.product-form__error-message');
-
-        this.errorMessageWrapper.toggleAttribute('hidden', !errorMessage);
-
-        if (errorMessage) {
-          this.errorMessage.textContent = errorMessage;
-        }
-      }
-
-      toggleSubmitButton(disable = true, text) {
-        if (disable) {
-          this.submitButton.setAttribute('disabled', 'disabled');
-          if (text) this.submitButtonText.textContent = text;
-        } else {
-          this.submitButton.removeAttribute('disabled');
-          this.submitButtonText.textContent = window.variantStrings.addToCart;
-        }
-      }
-
-      get variantIdInput() {
-        return this.form.querySelector('[name=id]');
-      }
+  function formatMoney(cents) {
+    if (window.Shopify && typeof Shopify.formatMoney === 'function') {
+      return Shopify.formatMoney(cents, window.Shopify.money_format || '€{{amount}}');
     }
-  );
-}
+    return (cents / 100).toLocaleString(undefined, {
+      style: 'currency',
+      currency: window.Shopify?.currency?.active || 'EUR',
+    });
+  }
+
+  // ---- <bc-product-form> ----
+  if (!customElements.get('bc-product-form')) {
+    customElements.define(
+      'bc-product-form',
+      class extends HTMLElement {
+        connectedCallback() {
+          const dataNode = this.querySelector('[data-bc-variants]');
+          try {
+            this.variants = dataNode ? JSON.parse(dataNode.textContent) : [];
+          } catch {
+            this.variants = [];
+          }
+          this.form = this.querySelector('[data-bc-form]');
+          this.variantInput = this.querySelector('[data-bc-variant-id]') || this.querySelector('[data-bc-pdp-variant-id]');
+          this.submit = this.querySelector('[data-bc-submit]');
+          this.label = this.querySelector('[data-bc-cta-label]');
+          this.optionFieldsets = this.querySelectorAll('[data-bc-option-position]');
+          this.priceBlock = document.querySelector('[data-bc-pdp-price]');
+
+          this.addEventListener('change', this.onChange.bind(this));
+          if (this.form) this.form.addEventListener('submit', this.onSubmit.bind(this));
+        }
+
+        currentSelection() {
+          return Array.from(this.optionFieldsets).map((fs) => {
+            const checked = fs.querySelector('input[type="radio"]:checked');
+            return checked ? checked.value : null;
+          });
+        }
+
+        onChange() {
+          if (!this.optionFieldsets.length) return;
+          const selection = this.currentSelection();
+          const variant = findVariant(this.variants, selection);
+          if (!variant) return this.markUnavailable();
+          this.applyVariant(variant);
+        }
+
+        applyVariant(variant) {
+          if (this.variantInput) this.variantInput.value = variant.id;
+
+          // Update PDP option display labels
+          this.querySelectorAll('[data-bc-option-display]').forEach((el) => {
+            const idx = parseInt(el.dataset.bcOptionDisplay, 10);
+            const fs = this.querySelectorAll('[data-bc-option-position]')[idx];
+            const checked = fs?.querySelector('input[type="radio"]:checked');
+            if (checked) el.textContent = checked.value;
+          });
+
+          // Update card price (inline) or PDP price block
+          const cardPrice = this.querySelector('.bc-card__price');
+          if (cardPrice) {
+            cardPrice.innerHTML = '';
+            const wrap = document.createElement('span');
+            wrap.className = 'bc-price' + (variant.compare_at_price > variant.price ? ' bc-price--on-sale' : '');
+            if (variant.compare_at_price && variant.compare_at_price > variant.price) {
+              const s = document.createElement('span');
+              s.className = 'bc-price__compare';
+              s.textContent = formatMoney(variant.compare_at_price);
+              wrap.appendChild(s);
+            }
+            const cur = document.createElement('span');
+            cur.className = 'bc-price__current';
+            cur.textContent = formatMoney(variant.price);
+            wrap.appendChild(cur);
+            cardPrice.appendChild(wrap);
+          } else if (this.priceBlock) {
+            // PDP price update
+            const pdpPrice = this.priceBlock.querySelector('.bc-price');
+            if (pdpPrice) {
+              pdpPrice.classList.toggle('bc-price--on-sale', variant.compare_at_price > variant.price);
+              const compare = pdpPrice.querySelector('.bc-price__compare');
+              const current = pdpPrice.querySelector('.bc-price__current');
+              if (current) current.textContent = formatMoney(variant.price);
+              if (variant.compare_at_price && variant.compare_at_price > variant.price) {
+                if (compare) compare.textContent = formatMoney(variant.compare_at_price);
+                else {
+                  const s = document.createElement('span');
+                  s.className = 'bc-price__compare';
+                  s.textContent = formatMoney(variant.compare_at_price);
+                  pdpPrice.insertBefore(s, current);
+                }
+              } else if (compare) {
+                compare.remove();
+              }
+            }
+          }
+
+          if (this.submit) {
+            if (variant.available) {
+              this.submit.removeAttribute('disabled');
+              if (this.label) this.label.textContent = 'Aggiungi al carrello';
+            } else {
+              this.submit.setAttribute('disabled', '');
+              if (this.label) this.label.textContent = 'Esaurito';
+            }
+          }
+        }
+
+        markUnavailable() {
+          if (this.submit) {
+            this.submit.setAttribute('disabled', '');
+            if (this.label) this.label.textContent = 'Non disponibile';
+          }
+        }
+
+        async onSubmit(e) {
+          e.preventDefault();
+          if (!this.submit || this.submit.hasAttribute('disabled')) return;
+          this.submit.classList.add('is-loading');
+          this.submit.setAttribute('aria-busy', 'true');
+
+          const fd = new FormData(this.form);
+
+          try {
+            const res = await fetch(window.routes?.cart_add_url || '/cart/add.js', {
+              method: 'POST',
+              headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
+              body: fd,
+            });
+            const json = await res.json();
+
+            if (!res.ok) {
+              this.handleError(json);
+              return;
+            }
+
+            // Success
+            window.bcEvents.emit('cart:added', { item: json });
+          } catch (err) {
+            console.error('add to cart error', err);
+            // Fallback: navigate to cart page
+            window.location.href = window.routes?.cart_url || '/cart';
+          } finally {
+            this.submit.classList.remove('is-loading');
+            this.submit.removeAttribute('aria-busy');
+          }
+        }
+
+        handleError(json) {
+          // Show inline error in label
+          if (this.label) this.label.textContent = json.description || 'Errore — riprova';
+          this.submit?.setAttribute('disabled', '');
+          setTimeout(() => {
+            this.submit?.removeAttribute('disabled');
+            if (this.label) this.label.textContent = 'Aggiungi al carrello';
+          }, 2000);
+        }
+      }
+    );
+  }
+
+  // ---- <bc-pdp-variant-picker> shares the same change-event flow ----
+  // The actual variant-id input lives inside the same <bc-product-form>,
+  // so when this picker is nested in <bc-product-form> on the PDP, change events
+  // bubble up and apply via the host.
+  if (!customElements.get('bc-pdp-variant-picker')) {
+    customElements.define('bc-pdp-variant-picker', class extends HTMLElement {});
+  }
+})();

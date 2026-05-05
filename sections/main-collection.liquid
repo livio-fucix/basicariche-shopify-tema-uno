@@ -1,0 +1,93 @@
+{%- paginate collection.products by section.settings.products_per_page -%}
+  <section class="bc-section bc-collection">
+    <div class="bc-container">
+      <header class="bc-collection__header">
+        <h1 class="bc-collection__title">{{ collection.title }}</h1>
+        {%- if collection.description != blank -%}
+          <div class="bc-collection__description">{{ collection.description }}</div>
+        {%- endif -%}
+      </header>
+
+      <div class="bc-collection__toolbar">
+        <p class="bc-collection__count">
+          {%- if collection.products_count == 1 -%}
+            {{ 'collections.products_count_one' | t: count: collection.products_count }}
+          {%- else -%}
+            {{ 'collections.products_count_other' | t: count: collection.products_count }}
+          {%- endif -%}
+        </p>
+        {%- if section.settings.enable_sorting -%}
+          <form class="bc-collection__sort" method="get">
+            <label for="bc-sort-by" class="bc-visually-hidden">{{ 'collections.sort_by' | t }}</label>
+            <select name="sort_by" id="bc-sort-by" onchange="this.form.submit()">
+              {%- for option in collection.sort_options -%}
+                <option value="{{ option.value }}" {% if option.value == collection.sort_by or option.value == collection.default_sort_by %}selected{% endif %}>{{ option.name }}</option>
+              {%- endfor -%}
+            </select>
+          </form>
+        {%- endif -%}
+      </div>
+
+      {%- if collection.products.size > 0 -%}
+        <div class="bc-grid bc-grid--products" style="--bc-grid-cols-desktop: {{ section.settings.columns_desktop }}; --bc-grid-cols-mobile: {{ section.settings.columns_mobile }};">
+          {%- for product in collection.products -%}
+            {% render 'card-product',
+              product: product,
+              section_id: section.id,
+              quick_add: settings.card_quick_add,
+              show_secondary_image: section.settings.show_secondary_image,
+              show_vendor: section.settings.show_vendor,
+              index: forloop.index0
+            %}
+          {%- endfor -%}
+        </div>
+      {%- else -%}
+        <p class="bc-empty">{{ 'products.no_products_in_collection' | t }}</p>
+      {%- endif -%}
+
+      {%- if paginate.pages > 1 -%}
+        <nav class="bc-pagination" aria-label="Pagination">
+          {%- if paginate.previous -%}
+            <a href="{{ paginate.previous.url }}" class="bc-pagination__link">{{ 'accessibility.previous' | t }}</a>
+          {%- endif -%}
+          {%- for part in paginate.parts -%}
+            {%- if part.is_link -%}
+              <a href="{{ part.url }}" class="bc-pagination__link">{{ part.title }}</a>
+            {%- else -%}
+              <span class="bc-pagination__current">{{ part.title }}</span>
+            {%- endif -%}
+          {%- endfor -%}
+          {%- if paginate.next -%}
+            <a href="{{ paginate.next.url }}" class="bc-pagination__link">{{ 'accessibility.next' | t }}</a>
+          {%- endif -%}
+        </nav>
+      {%- endif -%}
+    </div>
+  </section>
+{%- endpaginate -%}
+
+{% schema %}
+{
+  "name": "t:sections.main_collection.name",
+  "settings": [
+    { "type": "range", "id": "products_per_page", "label": "Prodotti per pagina", "min": 6, "max": 48, "step": 6, "default": 24 },
+    { "type": "range", "id": "columns_desktop", "label": "Colonne desktop", "min": 2, "max": 5, "step": 1, "default": 3 },
+    {
+      "type": "select",
+      "id": "columns_mobile",
+      "label": "Colonne mobile",
+      "options": [
+        { "value": "1", "label": "1" },
+        { "value": "2", "label": "2" }
+      ],
+      "default": "1"
+    },
+    { "type": "checkbox", "id": "show_secondary_image", "label": "Seconda immagine al hover", "default": true },
+    { "type": "checkbox", "id": "show_vendor", "label": "Mostra vendor", "default": false },
+    { "type": "checkbox", "id": "enable_sorting", "label": "Permetti ordinamento", "default": true }
+  ],
+  "enabled_on": {
+    "templates": ["collection"]
+  }
+}
+{% endschema %}

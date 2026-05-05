@@ -1,10 +1,4 @@
 {
-  "sections": {
-    "main": {
-      "type": "main-order"
-    }
-  },
-  "order": [
-    "main"
-  ]
+  "sections": { "main": { "type": "main-customer" } },
+  "order": ["main"]
 }
