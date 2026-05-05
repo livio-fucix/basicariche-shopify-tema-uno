@@ -1,25 +1,13 @@
 {
   "sections": {
-    "main": {
-      "type": "main-page",
-      "settings": {
-        "padding_top": 36,
-        "padding_bottom": 36
-      }
-    },
+    "page": { "type": "main-page" },
     "form": {
       "type": "contact-form",
       "settings": {
-        "heading": "",
-        "heading_size": "h1",
-        "color_scheme": "scheme-1",
-        "padding_top": 36,
-        "padding_bottom": 36
+        "heading": "Contattaci",
+        "text": "<p>Scrivici per qualsiasi richiesta. Rispondiamo entro 24h lavorative.</p>"
       }
     }
   },
-  "order": [
-    "main",
-    "form"
-  ]
+  "order": ["page", "form"]
 }

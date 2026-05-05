@@ -1,0 +1,130 @@
+{%- liquid
+  assign template_name = template.name
+-%}
+
+<section class="bc-section bc-customer">
+  <div class="bc-container bc-customer__inner">
+    {%- case template_name -%}
+      {%- when 'customers/login' -%}
+        <h1 class="bc-customer__title">{{ 'customer.login' | t }}</h1>
+        {%- form 'customer_login', class: 'bc-customer__form', novalidate: 'novalidate' -%}
+          {%- if form.errors -%}
+            <div class="bc-customer__errors">{{ form.errors | default_errors }}</div>
+          {%- endif -%}
+          <label for="bc-cust-email">{{ 'customer.email' | t }}</label>
+          <input type="email" id="bc-cust-email" name="customer[email]" autocomplete="email" required>
+          <label for="bc-cust-pass">{{ 'customer.password' | t }}</label>
+          <input type="password" id="bc-cust-pass" name="customer[password]" autocomplete="current-password" required>
+          <button type="submit" class="bc-button bc-button--primary bc-button--full">{{ 'customer.login' | t }}</button>
+          <p><a href="#recover" onclick="document.getElementById('bc-recover').hidden=false; return false;">{{ 'customer.forgot_password' | t }}</a></p>
+        {%- endform -%}
+
+        <div id="bc-recover" hidden>
+          {%- form 'recover_customer_password', class: 'bc-customer__form', novalidate: 'novalidate' -%}
+            <h2>{{ 'customer.forgot_password' | t }}</h2>
+            <label for="bc-recover-email">{{ 'customer.email' | t }}</label>
+            <input type="email" id="bc-recover-email" name="email" autocomplete="email" required>
+            <button type="submit" class="bc-button bc-button--primary">{{ 'customer.submit' | t }}</button>
+          {%- endform -%}
+        </div>
+
+        <p class="bc-customer__alt">{{ 'customer.new_customer' | t }} <a href="{{ routes.account_register_url }}">{{ 'customer.create_account' | t }}</a></p>
+
+      {%- when 'customers/register' -%}
+        <h1 class="bc-customer__title">{{ 'customer.create_account' | t }}</h1>
+        {%- form 'create_customer', class: 'bc-customer__form', novalidate: 'novalidate' -%}
+          {%- if form.errors -%}
+            <div class="bc-customer__errors">{{ form.errors | default_errors }}</div>
+          {%- endif -%}
+          <label for="bc-reg-fn">{{ 'customer.first_name' | t }}</label>
+          <input type="text" id="bc-reg-fn" name="customer[first_name]" autocomplete="given-name">
+          <label for="bc-reg-ln">{{ 'customer.last_name' | t }}</label>
+          <input type="text" id="bc-reg-ln" name="customer[last_name]" autocomplete="family-name">
+          <label for="bc-reg-email">{{ 'customer.email' | t }}</label>
+          <input type="email" id="bc-reg-email" name="customer[email]" autocomplete="email" required>
+          <label for="bc-reg-pass">{{ 'customer.password' | t }}</label>
+          <input type="password" id="bc-reg-pass" name="customer[password]" autocomplete="new-password" required>
+          <button type="submit" class="bc-button bc-button--primary bc-button--full">{{ 'customer.create_account' | t }}</button>
+        {%- endform -%}
+
+      {%- when 'customers/account' -%}
+        <h1 class="bc-customer__title">{{ 'customer.account' | t }}</h1>
+        <p>Ciao {{ customer.first_name | default: customer.email }}.</p>
+        <p><a href="{{ routes.account_addresses_url }}">{{ 'customer.addresses' | t }}</a></p>
+        <p><a href="{{ routes.account_logout_url }}">{{ 'customer.logout' | t }}</a></p>
+        {%- if customer.orders.size > 0 -%}
+          <h2>{{ 'customer.order_history' | t }}</h2>
+          <table class="bc-customer__orders">
+            <thead><tr><th>#</th><th>Data</th><th>Totale</th><th>Status</th></tr></thead>
+            <tbody>
+              {%- for order in customer.orders -%}
+                <tr>
+                  <td><a href="{{ order.customer_url }}">{{ order.name }}</a></td>
+                  <td>{{ order.created_at | date: '%d/%m/%Y' }}</td>
+                  <td>{{ order.total_price | money }}</td>
+                  <td>{{ order.financial_status_label }}</td>
+                </tr>
+              {%- endfor -%}
+            </tbody>
+          </table>
+        {%- endif -%}
+
+      {%- when 'customers/addresses' -%}
+        <h1 class="bc-customer__title">{{ 'customer.addresses' | t }}</h1>
+        <p><a href="{{ routes.account_url }}">← {{ 'customer.account' | t }}</a></p>
+        {%- paginate customer.addresses by 8 -%}
+          {%- for address in customer.addresses -%}
+            <article class="bc-customer__address">
+              <p>{{ address | format_address }}</p>
+            </article>
+          {%- endfor -%}
+        {%- endpaginate -%}
+
+      {%- when 'customers/order' -%}
+        <h1 class="bc-customer__title">Ordine {{ order.name }}</h1>
+        <p>Data: {{ order.created_at | date: '%d/%m/%Y' }}</p>
+        <p>Totale: {{ order.total_price | money_with_currency }}</p>
+        <ul>
+          {%- for line_item in order.line_items -%}
+            <li>{{ line_item.title }} × {{ line_item.quantity }} — {{ line_item.line_price | money }}</li>
+          {%- endfor -%}
+        </ul>
+
+      {%- when 'customers/reset_password' -%}
+        <h1 class="bc-customer__title">Reset password</h1>
+        {%- form 'reset_customer_password', class: 'bc-customer__form' -%}
+          {%- if form.errors -%}
+            <div class="bc-customer__errors">{{ form.errors | default_errors }}</div>
+          {%- endif -%}
+          <label for="bc-rp-pass">Nuova password</label>
+          <input type="password" id="bc-rp-pass" name="customer[password]" autocomplete="new-password" required>
+          <label for="bc-rp-conf">Conferma password</label>
+          <input type="password" id="bc-rp-conf" name="customer[password_confirmation]" autocomplete="new-password" required>
+          <button type="submit" class="bc-button bc-button--primary bc-button--full">{{ 'customer.submit' | t }}</button>
+        {%- endform -%}
+
+      {%- when 'customers/activate_account' -%}
+        <h1 class="bc-customer__title">Attiva account</h1>
+        {%- form 'activate_customer_password', class: 'bc-customer__form' -%}
+          {%- if form.errors -%}
+            <div class="bc-customer__errors">{{ form.errors | default_errors }}</div>
+          {%- endif -%}
+          <label for="bc-ac-pass">Password</label>
+          <input type="password" id="bc-ac-pass" name="customer[password]" autocomplete="new-password" required>
+          <label for="bc-ac-conf">Conferma</label>
+          <input type="password" id="bc-ac-conf" name="customer[password_confirmation]" autocomplete="new-password" required>
+          <button type="submit" class="bc-button bc-button--primary bc-button--full">{{ 'customer.submit' | t }}</button>
+        {%- endform -%}
+    {%- endcase -%}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "t:sections.main_customers.name",
+  "settings": [],
+  "enabled_on": {
+    "templates": ["customers/login", "customers/register", "customers/account", "customers/addresses", "customers/order", "customers/reset_password", "customers/activate_account"]
+  }
+}
+{% endschema %}

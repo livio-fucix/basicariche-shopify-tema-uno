@@ -1,0 +1,61 @@
+{%- comment -%}
+  Renders a full variant picker for the product page (PDP).
+  Accepts:
+    - product: {Object} required
+    - section_id: {String} required
+{%- endcomment -%}
+
+{%- if product.has_only_default_variant -%}
+  <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}" data-bc-pdp-variant-id>
+{%- else -%}
+  <bc-pdp-variant-picker class="bc-pdp__variants" data-section="{{ section_id }}">
+    <script type="application/json" data-bc-variants>{{ product.variants | json }}</script>
+
+    {%- for option in product.options_with_values -%}
+      {%- liquid
+        assign opt_lower = option.name | downcase
+        assign is_color = false
+        if opt_lower contains 'color' or opt_lower contains 'colore'
+          assign is_color = true
+        endif
+        assign group_id = 'bc-pdp-opt-' | append: section_id | append: '-' | append: forloop.index0
+      -%}
+      <fieldset class="bc-pdp__option{% if is_color %} bc-pdp__option--color{% endif %}" data-bc-option-position="{{ forloop.index0 }}">
+        <legend class="bc-pdp__option-legend">
+          <span class="bc-pdp__option-name">{{ option.name }}</span>
+          <span class="bc-pdp__option-value" data-bc-option-display="{{ forloop.index0 }}">{{ option.selected_value }}</span>
+        </legend>
+        <div class="bc-pdp__option-values">
+          {%- for value in option.values -%}
+            {%- liquid
+              assign input_id = group_id | append: '-' | append: forloop.index0
+              assign value_handle = value | downcase | handle
+            -%}
+            <input
+              type="radio"
+              id="{{ input_id }}"
+              name="{{ group_id }}"
+              value="{{ value | escape }}"
+              data-bc-option-value
+              {% if value == option.selected_value %}checked{% endif %}
+            >
+            <label
+              for="{{ input_id }}"
+              class="bc-pdp__option-pill{% if is_color %} bc-pdp__option-pill--color{% endif %}"
+              {%- if is_color %} data-bc-color="{{ value_handle }}"{% endif -%}
+            >
+              {%- if is_color -%}
+                <span class="bc-visually-hidden">{{ value }}</span>
+                <span class="bc-pdp__color-swatch" aria-hidden="true"></span>
+              {%- else -%}
+                {{ value }}
+              {%- endif -%}
+            </label>
+          {%- endfor -%}
+        </div>
+      </fieldset>
+    {%- endfor -%}
+
+    <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}" data-bc-pdp-variant-id>
+  </bc-pdp-variant-picker>
+{%- endif -%}
