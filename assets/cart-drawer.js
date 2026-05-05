@@ -92,6 +92,16 @@
           if (window.BC_DEBUG) console.log('[bc] drawer.open()');
           this.classList.add('is-open');
           this.setAttribute('aria-hidden', 'false');
+          this.style.pointerEvents = 'auto';
+
+          // Belt-and-suspenders: also set inline styles on panel + overlay so
+          // the drawer becomes visible even if for any reason the CSS rules
+          // tied to .is-open don't take effect (cache, override, plugin).
+          const panel = this.querySelector('.bc-drawer__panel');
+          const overlay = this.querySelector('.bc-drawer__overlay');
+          if (panel) panel.style.transform = 'translateX(0)';
+          if (overlay) overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+
           document.documentElement.style.overflow = 'hidden';
           requestAnimationFrame(() => this.querySelector('[data-bc-drawer-close]')?.focus());
         }
@@ -100,6 +110,13 @@
           if (window.BC_DEBUG) console.log('[bc] drawer.close()');
           this.classList.remove('is-open');
           this.setAttribute('aria-hidden', 'true');
+          this.style.pointerEvents = '';
+
+          const panel = this.querySelector('.bc-drawer__panel');
+          const overlay = this.querySelector('.bc-drawer__overlay');
+          if (panel) panel.style.transform = '';
+          if (overlay) overlay.style.backgroundColor = '';
+
           document.documentElement.style.overflow = '';
         }
 
@@ -107,12 +124,22 @@
         onCartAdded({ sections } = {}) {
           // Open immediately — perceived snappy UX
           this.open();
-          if (sections) {
+          if (sections && Object.keys(sections).length) {
             this.applySections(sections);
+            // applySections replaces innerHTML, so re-assert the open inline
+            // styles on the freshly rendered panel/overlay.
+            this.assertOpenStyles();
           } else {
-            // Fallback: re-fetch
-            this.refresh();
+            // Fallback: re-fetch via Section API
+            this.refresh().then(() => this.assertOpenStyles());
           }
+        }
+
+        assertOpenStyles() {
+          const panel = this.querySelector('.bc-drawer__panel');
+          const overlay = this.querySelector('.bc-drawer__overlay');
+          if (panel) panel.style.transform = 'translateX(0)';
+          if (overlay) overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
         }
 
         applySections(sections) {

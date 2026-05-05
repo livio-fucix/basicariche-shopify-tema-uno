@@ -1,3 +1,18 @@
+{%- liquid
+  assign avail = request.params.avail | default: 'available'
+  assign show_avail = false
+  assign show_sold = false
+  if avail == 'available'
+    assign show_avail = true
+  elsif avail == 'soldout'
+    assign show_sold = true
+  elsif avail == 'both'
+    assign show_avail = true
+    assign show_sold = true
+  endif
+  assign sort_by = request.params.sort_by | default: collection.default_sort_by
+-%}
+
 {%- paginate collection.products by section.settings.products_per_page -%}
   <section class="bc-section bc-collection">
     <div class="bc-container">
@@ -8,41 +23,84 @@
         {%- endif -%}
       </header>
 
-      <div class="bc-collection__toolbar">
-        <p class="bc-collection__count">
-          {%- if collection.products_count == 1 -%}
-            {{ 'collections.products_count_one' | t: count: collection.products_count }}
-          {%- else -%}
-            {{ 'collections.products_count_other' | t: count: collection.products_count }}
-          {%- endif -%}
-        </p>
+      <form class="bc-collection__toolbar" method="get">
+        {%- comment -%}preserve sort + page when changing avail filter, preserve avail when changing sort{%- endcomment -%}
+        <div class="bc-collection__filter">
+          <label for="bc-avail">{{ 'products.availability' | t | default: 'Disponibilità' }}:</label>
+          <select name="avail" id="bc-avail" onchange="this.form.submit()">
+            <option value="available" {% if avail == 'available' %}selected{% endif %}>Solo disponibili</option>
+            <option value="soldout" {% if avail == 'soldout' %}selected{% endif %}>Solo esauriti</option>
+            <option value="both" {% if avail == 'both' %}selected{% endif %}>Entrambi</option>
+            <option value="none" {% if avail == 'none' %}selected{% endif %}>Nessuno</option>
+          </select>
+        </div>
+
         {%- if section.settings.enable_sorting -%}
-          <form class="bc-collection__sort" method="get">
-            <label for="bc-sort-by" class="bc-visually-hidden">{{ 'collections.sort_by' | t }}</label>
+          <div class="bc-collection__sort">
+            <label for="bc-sort-by">{{ 'collections.sort_by' | t }}:</label>
             <select name="sort_by" id="bc-sort-by" onchange="this.form.submit()">
               {%- for option in collection.sort_options -%}
-                <option value="{{ option.value }}" {% if option.value == collection.sort_by or option.value == collection.default_sort_by %}selected{% endif %}>{{ option.name }}</option>
+                <option value="{{ option.value }}" {% if option.value == sort_by %}selected{% endif %}>{{ option.name }}</option>
               {%- endfor -%}
             </select>
-          </form>
+          </div>
         {%- endif -%}
-      </div>
+      </form>
 
-      {%- if collection.products.size > 0 -%}
-        <div class="bc-grid bc-grid--products" style="--bc-grid-cols-desktop: {{ section.settings.columns_desktop }}; --bc-grid-cols-mobile: {{ section.settings.columns_mobile }};">
+      {%- assign visible_count = 0 -%}
+      {%- capture cards -%}
+        {%- if avail != 'none' -%}
           {%- for product in collection.products -%}
-            {% render 'card-product',
-              product: product,
-              section_id: section.id,
-              quick_add: settings.card_quick_add,
-              show_secondary_image: section.settings.show_secondary_image,
-              show_vendor: section.settings.show_vendor,
-              index: forloop.index0
-            %}
+            {%- liquid
+              assign include = false
+              if product.available and show_avail
+                assign include = true
+              elsif product.available == false and show_sold
+                assign include = true
+              endif
+            -%}
+            {%- if include -%}
+              {%- assign visible_count = visible_count | plus: 1 -%}
+              {% render 'card-product',
+                product: product,
+                section_id: section.id,
+                quick_add: settings.card_quick_add,
+                show_secondary_image: section.settings.show_secondary_image,
+                show_vendor: section.settings.show_vendor,
+                index: forloop.index0
+              %}
+            {%- endif -%}
           {%- endfor -%}
+        {%- endif -%}
+      {%- endcapture -%}
+
+      <p class="bc-collection__count">
+        {%- if visible_count == 1 -%}
+          {{ 'collections.products_count_one' | t: count: visible_count }}
+        {%- else -%}
+          {{ 'collections.products_count_other' | t: count: visible_count }}
+        {%- endif -%}
+        {%- if collection.products_count > visible_count and avail != 'both' -%}
+          <span class="bc-collection__count-extra"> · {{ collection.products_count }} totali</span>
+        {%- endif -%}
+      </p>
+
+      {%- if visible_count > 0 -%}
+        <div class="bc-grid bc-grid--products" style="--bc-grid-cols-desktop: {{ section.settings.columns_desktop }}; --bc-grid-cols-mobile: {{ section.settings.columns_mobile }};">
+          {{ cards }}
         </div>
       {%- else -%}
-        <p class="bc-empty">{{ 'products.no_products_in_collection' | t }}</p>
+        <p class="bc-empty">
+          {%- if avail == 'none' -%}
+            Nessun prodotto da mostrare con il filtro corrente.
+          {%- elsif avail == 'available' -%}
+            Nessun prodotto disponibile in questa collezione.
+          {%- elsif avail == 'soldout' -%}
+            Nessun prodotto esaurito.
+          {%- else -%}
+            {{ 'products.no_products_in_collection' | t }}
+          {%- endif -%}
+        </p>
       {%- endif -%}
 
       {%- if paginate.pages > 1 -%}

@@ -836,21 +836,67 @@ a { color: inherit; }
 .bc-collection__toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  flex-wrap: wrap;
   gap: var(--bc-gap-md);
-  margin-bottom: var(--bc-gap-lg);
+  margin-bottom: var(--bc-gap-md);
   padding-bottom: var(--bc-gap-md);
   border-bottom: 1px solid color-mix(in srgb, var(--bc-text) 8%, transparent);
 }
 
-.bc-collection__count { color: var(--bc-text-muted); font-size: var(--bc-fs-sm); margin: 0; }
+.bc-collection__filter,
+.bc-collection__sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: var(--bc-fs-sm);
+}
 
+.bc-collection__filter label,
+.bc-collection__sort label {
+  font-weight: 600;
+  color: var(--bc-text-muted);
+}
+
+.bc-collection__filter select,
 .bc-collection__sort select {
-  padding: 0.6rem 1.2rem;
+  padding: 0.6rem 2.4rem 0.6rem 1.2rem;
   border-radius: var(--bc-radius-pill);
   border: 1.5px solid color-mix(in srgb, var(--bc-text) 18%, transparent);
   background: var(--bc-bg);
   font-size: var(--bc-fs-sm);
+  font-weight: 600;
+  color: var(--bc-text);
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%230F1419' stroke-width='2'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  cursor: pointer;
+}
+
+.bc-collection__filter select:focus-visible,
+.bc-collection__sort select:focus-visible {
+  border-color: var(--bc-accent);
+  outline: none;
+}
+
+.bc-collection__sort {
+  margin-left: auto;
+}
+
+.bc-collection__count {
+  color: var(--bc-text-muted);
+  font-size: var(--bc-fs-sm);
+  margin: 0 0 var(--bc-gap-md);
+}
+.bc-collection__count-extra { opacity: 0.7; }
+
+@media (max-width: 749px) {
+  .bc-collection__sort { margin-left: 0; }
+  .bc-collection__filter,
+  .bc-collection__sort { width: 100%; justify-content: space-between; }
+  .bc-collection__filter select,
+  .bc-collection__sort select { flex: 1; }
 }
 
 /* Pagination */
