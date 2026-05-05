@@ -1,11 +1,11 @@
 [
   {
     "name": "theme_info",
-    "theme_name": "Dawn",
-    "theme_version": "15.4.1",
-    "theme_author": "Shopify",
-    "theme_documentation_url": "https://help.shopify.com/manual/online-store/themes",
-    "theme_support_url": "https://support.shopify.com/"
+    "theme_name": "Basicariche",
+    "theme_version": "1.1",
+    "theme_author": "Basi Cariche",
+    "theme_documentation_url": "https://github.com/livio-fucix/basicariche-shopify-tema-uno",
+    "theme_support_url": "https://github.com/livio-fucix/basicariche-shopify-tema-uno/issues"
   },
   {
     "name": "t:settings_schema.logo.name",
