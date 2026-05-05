@@ -8,3 +8,6 @@
 ehthumbs.db
 Thumbs.db
 .shopify
+
+# Local theme zip artifact (do not commit)
+basicariche-theme.zip

@@ -2,7 +2,7 @@
   {
     "name": "theme_info",
     "theme_name": "Basicariche",
-    "theme_version": "1.2",
+    "theme_version": "1.3",
     "theme_author": "Basi Cariche",
     "theme_documentation_url": "https://github.com/livio-fucix/basicariche-shopify-tema-uno",
     "theme_support_url": "https://github.com/livio-fucix/basicariche-shopify-tema-uno/issues"
@@ -487,6 +487,23 @@
   {
     "name": "t:settings_schema.cards.name",
     "settings": [
+      {
+        "type": "radio",
+        "id": "card_layout",
+        "label": "Layout card prodotto",
+        "info": "Uppa tile = nuovo look v1.3 con tile colorato. Legacy = look Dawn classico (rollback).",
+        "options": [
+          {
+            "value": "uppa_tile",
+            "label": "Uppa tile (consigliato)"
+          },
+          {
+            "value": "legacy",
+            "label": "Legacy (Dawn classic)"
+          }
+        ],
+        "default": "uppa_tile"
+      },
       {
         "type": "select",
         "id": "card_style",
