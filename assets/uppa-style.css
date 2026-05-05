@@ -1,25 +1,29 @@
-/* Uppa-inspired global tweaks: pill nav, rounded announcement, accent orange */
+/* Basi Cariche brand layer (palette + global tweaks) */
 
 :root {
-  --uppa-accent: 242, 106, 31; /* #F26A1F */
-  --uppa-pill-border: 30, 42, 120; /* #1E2A78 navy */
+  --bc-accent: 210, 56, 31;        /* #D2381F red */
+  --bc-secondary: 15, 47, 92;       /* #0F2F5C navy */
+  --bc-bg-soft: 250, 247, 242;      /* #FAF7F2 ivory */
+  --bc-highlight: 244, 200, 66;     /* #F4C842 gold */
+  --bc-text-strong: 15, 20, 25;     /* #0F1419 */
+  --bc-text-muted: 90, 100, 112;    /* #5A6470 */
 }
 
-/* Header menu items rendered as rounded pill buttons */
+/* Pill navigation in main header */
 .header__menu-item {
   display: inline-flex;
   align-items: center;
   padding: 0.6rem 1.6rem !important;
-  border: 1px solid rgb(var(--uppa-pill-border));
+  border: 1.5px solid rgb(var(--bc-secondary));
   border-radius: 999px;
-  color: rgb(var(--uppa-pill-border));
+  color: rgb(var(--bc-secondary));
   background-color: transparent;
-  transition: background-color 150ms ease, color 150ms ease;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
 }
 
 .header__menu-item:hover {
-  background-color: rgb(var(--uppa-pill-border));
-  color: rgb(var(--color-background));
+  background-color: rgb(var(--bc-secondary));
+  color: rgb(var(--bc-bg-soft));
   text-decoration: none;
 }
 
@@ -30,42 +34,148 @@
 
 .header__menu-item[aria-current='page'],
 .header__menu-item:has(.header__active-menu-item) {
-  background-color: rgb(var(--uppa-accent));
-  border-color: rgb(var(--uppa-accent));
+  background-color: rgb(var(--bc-accent));
+  border-color: rgb(var(--bc-accent));
   color: #fff;
 }
 
 .header__active-menu-item {
-  text-underline-offset: 0;
   text-decoration: none !important;
 }
 
-/* Spacing between pill items */
 .header__inline-menu .list-menu--inline {
   gap: 0.6rem;
 }
 
-/* Make the cart icon bubble feel uppa-like (orange) */
+/* Cart bubble */
 .cart-count-bubble {
-  background-color: rgb(var(--uppa-accent)) !important;
+  background-color: rgb(var(--bc-accent)) !important;
   color: #fff !important;
 }
 
-/* Announcement bar: soft pink background with orange link, rounded ends */
+/* Announcement bar: warm ivory + accent text */
 .announcement-bar {
-  background-color: #fbe6db;
-  color: rgb(var(--uppa-accent));
+  background-color: rgb(var(--bc-bg-soft));
+  color: rgb(var(--bc-accent));
 }
 
 .announcement-bar__message,
 .announcement-bar__link {
-  color: rgb(var(--uppa-accent));
+  color: rgb(var(--bc-accent));
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
-/* Slightly bolder titles to match the uppa look */
+/* Bolder titles to match the editorial look */
 .product-card-wrapper .card__heading,
 .card-information .card__heading {
   font-weight: 700;
+}
+
+/* Footer: theme version label muted */
+.footer__theme-version {
+  opacity: 0.55;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+}
+
+/* === Product card refactor (uppa-style coloured tile) === */
+
+/* Colour the media area as a soft ivory tile */
+.product-card-wrapper .card__media,
+.product-card-wrapper .card .media {
+  background-color: rgb(var(--bc-bg-soft));
+  border-radius: 0;
+}
+
+/* Pad the product image so it floats inside the tile */
+.product-card-wrapper .card__media img {
+  padding: 1.6rem;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+
+/* Remove the default card border/shadow so the tile is clean */
+.product-card-wrapper .card,
+.product-card-wrapper .card__inner {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent;
+}
+
+/* Cards in a row separated by hairlines instead of cards */
+.collection .grid--3-col-tablet > .grid__item,
+.collection .grid--4-col-desktop > .grid__item {
+  position: relative;
+}
+
+/* Title: bolder, larger, tight leading */
+.product-card-wrapper .card__heading,
+.product-card-wrapper .card__heading.h5 {
+  font-size: 1.9rem;
+  line-height: 1.15;
+  font-weight: 800;
+  margin: 0.4rem 0 0.2rem;
+  letter-spacing: -0.01em;
+}
+
+/* Subtitle / vendor */
+.product-card-wrapper .caption-with-letter-spacing,
+.product-card-wrapper .caption-large {
+  font-size: 1.3rem;
+  font-weight: 400;
+  color: rgb(var(--bc-text-muted));
+  letter-spacing: 0;
+  text-transform: none;
+  margin: 0.2rem 0 0;
+}
+
+/* Price emphasized */
+.product-card-wrapper .price__container .price-item--regular,
+.product-card-wrapper .price-item.price-item--regular {
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: rgb(var(--bc-text-strong));
+}
+
+.product-card-wrapper .price-item--sale {
+  color: rgb(var(--bc-accent));
+  font-weight: 700;
+}
+
+/* Hover: slight image scale + tile darkening */
+.product-card-wrapper:hover .card__media {
+  background-color: rgba(var(--bc-bg-soft), 0.85);
+}
+
+.product-card-wrapper .card__media img {
+  transition: transform 250ms ease;
+}
+
+.product-card-wrapper:hover .card__media img {
+  transform: scale(1.02);
+}
+
+/* Mobile: keep tile look, slightly smaller padding */
+@media screen and (max-width: 749px) {
+  .product-card-wrapper .card__media img {
+    padding: 1rem;
+  }
+
+  .product-card-wrapper .card__heading,
+  .product-card-wrapper .card__heading.h5 {
+    font-size: 1.6rem;
+  }
+
+  .product-card-wrapper .price__container .price-item--regular {
+    font-size: 1.5rem;
+  }
+}
+
+/* Mobile-first overall safety: prevent very small text on mobile */
+@media screen and (max-width: 480px) {
+  .category-pills__pill,
+  .header__menu-item {
+    font-size: 1.3rem;
+  }
 }
