@@ -1,5 +1,36 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
 {
-  "current": "Default",
+  "current": {
+    "logo": "shopify://shop_images/106_sitelogo_0121012718mdPHVq_resized_a948713a-f221-449d-8c6c-f1590ce0eb0a.jpg",
+    "logo_width": 120,
+    "color_background": "#FFFFFF",
+    "color_surface": "#FAF7F2",
+    "color_text": "#0F1419",
+    "color_text_muted": "#5A6470",
+    "color_accent": "#D2381F",
+    "color_accent_text": "#FFFFFF",
+    "color_secondary": "#0F2F5C",
+    "color_highlight": "#F4C842",
+    "font_body": "assistant_n4",
+    "font_heading": "assistant_n7",
+    "type_scale": 100,
+    "page_width": 1280,
+    "section_spacing": 56,
+    "cart_type": "drawer",
+    "show_cart_note": false,
+    "card_show_vendor": false,
+    "card_show_secondary_image": true,
+    "card_quick_add": true,
+    "content_for_index": []
+  },
   "presets": {
     "Default": {
       "logo_width": 120,
